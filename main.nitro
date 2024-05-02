@@ -1,0 +1,4 @@
+include "io"
+func main() -> i32 do
+  bind value: string = "test"
+end
