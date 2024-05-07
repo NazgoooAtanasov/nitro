@@ -89,6 +89,22 @@ void generator_gen_block(Generator* g, ast_block* block) {
           arg = arg->next;
         }
         generator_add_asm(g, "\tsyscall\n");
+      } else {
+        ast_callarguments* arg = stmt->funccall->call_arguments;
+        while (arg->next != NULL) {
+          arg = arg->next;
+        }
+        
+        while(arg != NULL) {
+          generator_add_asm(g, "\tpush ");
+          generator_add_asm(g, arg->value);
+          generator_add_asm(g, "\n");
+          arg = arg->prev;
+        }
+
+        generator_add_asm(g, "\tcall _nitro_");
+        generator_add_asm(g, stmt->funccall->funcname);
+        generator_add_asm(g, "\n");
       }
     }
 
@@ -115,6 +131,11 @@ void generator_gen_top_level(Generator* g) {
   }
 
   generator_gen_funcdecl(g, g->ast->funcdecl);
+  ast_funcdecl* level = g->ast->funcdecl->next;
+  while(level != NULL) {
+    generator_gen_funcdecl(g, level);
+    level = level->next;
+  }
 
   generator_add_asm(g, "\n");
   generator_add_asm(g, "_start:\n");

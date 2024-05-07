@@ -34,17 +34,18 @@ typedef struct _ast_callarguments {
   AST_VARIABLE_TYPE type;
   ast_position pos;
   struct _ast_callarguments* next;
+  struct _ast_callarguments* prev;
 } ast_callarguments;
 
 typedef struct {
   const char* funcname;
   ast_callarguments* call_arguments;
   ast_position pos;
-} ast_funccacl;
+} ast_funccall;
 
 typedef struct _ast_stmt {
   ast_variablebind* variablebind;
-  ast_funccacl* funccall;
+  ast_funccall* funccall;
   struct _ast_stmt* next;
   ast_position pos;
 } ast_stmt;
@@ -56,17 +57,18 @@ typedef struct {
 
 typedef struct _ast_funcarguments {
   const char* arg_name;
-  const char* arg_type;
+  AST_VARIABLE_TYPE arg_type;
   struct _ast_funcarguments* next;
   ast_position pos;
 } ast_funcarguments;
 
-typedef struct {
+typedef struct _ast_funcdecl {
   const char* func_name;
   const char* return_type;
   ast_funcarguments* arguments;
   ast_block* block;
   ast_position pos;
+  struct _ast_funcdecl* next;
 } ast_funcdecl;
 
 typedef struct {

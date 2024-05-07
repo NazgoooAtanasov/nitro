@@ -146,12 +146,14 @@ ast_callarguments* parser_parse_callarguments(Parser* p) {
   ast_callarguments* call_arguments = malloc(sizeof(ast_callarguments));
   ast_callarguments* level = NULL;
 
+  uint32_t arg_count = 0;
   Token* t = parser_peek_token(p);
   while (t->type == TOKEN_TYPE_CONST || t->type == TOKEN_TYPE_IDENT) {
     if (level == NULL) {
       level = call_arguments;
     } else {
       level->next = malloc(sizeof(ast_callarguments));
+      level->next->prev = level;
       level = level->next;
     }
     parser_pop_token(p);
@@ -168,14 +170,15 @@ ast_callarguments* parser_parse_callarguments(Parser* p) {
       .col = t->col
     };
 
+    arg_count++;
     t = parser_peek_token(p);
   }
 
-  return call_arguments;
+  return arg_count > 0 ? call_arguments : NULL;
 }
 
-ast_funccacl* parser_parse_funccal(Parser* p) {
-  ast_funccacl* funccall = malloc(sizeof(ast_funccacl));
+ast_funccall* parser_parse_funccal(Parser* p) {
+  ast_funccall* funccall = malloc(sizeof(ast_funccall));
 
   Token* t = parser_pop_token(p);
   if (t->type != TOKEN_TYPE_INTRINSIC && t->type != TOKEN_TYPE_IDENT) {
@@ -281,6 +284,7 @@ ast_funcarguments* parser_parse_funcarguments(Parser* p) {
     exit(1);
   }
 
+  uint32_t arg_count = 0;
   t = parser_peek_token(p);
   while(t->type == TOKEN_TYPE_IDENT) {
     if (level == NULL) {
@@ -308,7 +312,13 @@ ast_funcarguments* parser_parse_funcarguments(Parser* p) {
       exit(1);
     }
 
-    level->arg_type = t->str_val;
+    if (strcmp(t->str_val, "i32") == 0) {
+      level->arg_type = AST_VARIABLE_TYPE_I32;
+    } else if (strcmp(t->str_val, "string") == 0) {
+      level->arg_type = AST_VARIABLE_TYPE_STRING;
+    } else if (strcmp(t->str_val, "void") == 0) {
+      level->arg_type = AST_VARIABLE_TYPE_VOID;
+    }
 
     level->pos = (ast_position){
       .file_path = p->tokenizer->file_path,
@@ -316,6 +326,7 @@ ast_funcarguments* parser_parse_funcarguments(Parser* p) {
       .row = t->row
     };
 
+    arg_count++;
     t = parser_peek_token(p);
   }
 
@@ -327,7 +338,7 @@ ast_funcarguments* parser_parse_funcarguments(Parser* p) {
     exit(1);
   }
 
-  return arguments;
+  return arg_count > 0 ? arguments : NULL;
 }
 
 ast_funcdecl* parser_parse_funcdecl(Parser* p) {
@@ -389,6 +400,15 @@ ast_axiom* parser_parse_axiom(Parser* p) {
   }
 
   axiom->funcdecl = parser_parse_funcdecl(p);
+  ast_funcdecl* level = axiom->funcdecl;
+
+  t = parser_peek_token(p);
+  while(t->type == TOKEN_TYPE_KEYWORD && strcmp(t->str_val, "func") == 0) {
+    level->next = parser_parse_funcdecl(p);
+    level = level->next;
+    t = parser_peek_token(p);
+  }
+
   axiom->pos = (ast_position){
     .file_path = p->tokenizer->file_path,
     .col = t->col,

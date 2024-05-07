@@ -1,4 +1,8 @@
 include "io"
+
+func getinteger(i: i32 ii: i32) -> void do
+end
+
 func main() -> i32 do
-  bind value: string = "test"
+  getinteger(5 69)
 end

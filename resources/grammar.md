@@ -1,4 +1,4 @@
-$$ axiom \to [includes] \space funcdecl $$
+$$ axiom \to [includes] \space funcdecl \space \{\space funcdecl\} $$
 $$ includes \to \text{include} \space \{includes\}$$
 $$ funcdecl \to \text{func} \space ident \space arguments \space returntype \space block$$
 
@@ -16,7 +16,7 @@ $$ type \to \text{i32} | \text{void} $$
 $$ block \to \text{do} \space stmt \space \text{end}$$
 $$ stmt \to variablebind|funccal \space \{stmt\}$$
 $$ variablebind \to \text{bind} \space ident \space argumenttype = const$$
-$$ funccal \to SYS\_CALL\space callarguments $$
+$$ funccal \to \text{SYS\_CALL}|\text{ident}\space callarguments $$
 $$ callarguments \to (callargumentlist)  $$
 $$ callargumentlist \to [const|ident \space \{\space callargumentlist\}]  $$
 
