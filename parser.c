@@ -164,6 +164,10 @@ ast_callarguments* parser_parse_callarguments(Parser* p) {
       level->type = get_type(level->value);
     }
 
+    if (t->type == TOKEN_TYPE_IDENT) {
+      level->is_ident = true;
+    }
+
     level->pos = (ast_position) {
       .file_path = p->tokenizer->file_path,
       .row = t->row,

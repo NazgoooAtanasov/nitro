@@ -18,16 +18,26 @@ Semantic semantic_create(ast_axiom* ast) {
   Semantic semantic = {0};
   semantic.ast = ast;
   semantic.funcdecls = NULL;
+  semantic.variablebinds = NULL;
   return semantic;
 }
 
-void semantic_add_funcdecl(Semantic* s, ast_funcdecl* funcdecl) {
+inline void semantic_add_funcdecl(Semantic* s, ast_funcdecl* funcdecl) {
   shput(s->funcdecls, funcdecl->func_name, funcdecl);
 }
 
-ast_funcdecl* semantic_get_funcdecl(Semantic* s, const char* funcname) {
+inline ast_funcdecl* semantic_get_funcdecl(Semantic* s, const char* funcname) {
   ast_funcdecl* funcdecl = shget(s->funcdecls, funcname);
   return funcdecl;
+}
+
+inline void semantic_add_variablebind(Semantic* s, ast_variablebind* variablebind) {
+  shput(s->variablebinds, variablebind->ident, variablebind);
+}
+
+inline ast_variablebind* semantic_get_variablebind(Semantic* s, const char* variablebindname) {
+  ast_variablebind* variablebind = shget(s->variablebinds, variablebindname);
+  return variablebind;
 }
 
 void semantic_check_includes(Semantic* s, ast_includes* includes) {
@@ -77,6 +87,17 @@ void semantic_check_block(Semantic* s, ast_block* block) {
                 stmt->variablebind->pos.col, "string", stmt->variablebind->value);
         exit(1);
       }
+
+      ast_variablebind* variablebind = semantic_get_variablebind(s, stmt->variablebind->ident);
+      if (variablebind != NULL) {
+        fprintf(stderr, "%s:%d:%d [Semantic error]: variable with name '%s' already exists.\n",
+                stmt->variablebind->pos.file_path,
+                stmt->variablebind->pos.row,
+                stmt->variablebind->pos.col, stmt->variablebind->ident);
+        exit(1);
+      }
+
+      semantic_add_variablebind(s, stmt->variablebind);
     } else if (stmt->funccall) { // intrinsic SYS_CALL with two arguments
       if (strcmp(stmt->funccall->funcname, "SYS_CALL") == 0) {
         uint32_t max_arg_count = 2;
@@ -85,7 +106,23 @@ void semantic_check_block(Semantic* s, ast_block* block) {
         while(arg != NULL) {
           arg_count++;
 
-          if (arg->type != AST_VARIABLE_TYPE_I32) {
+          AST_VARIABLE_TYPE actual_type = arg->type;
+          if (arg->is_ident) {
+            ast_variablebind* variablebind = semantic_get_variablebind(s, arg->value);
+
+            if (variablebind == NULL) {
+              fprintf(stderr, "%s:%d:%d [Semantic error]: Undefined reference to '%s'\n",
+                      stmt->funccall->pos.file_path,
+                      stmt->funccall->pos.row,
+                      stmt->funccall->pos.col,
+                      arg->value);
+              exit(1);
+            }
+
+            actual_type = variablebind->type;
+          }
+
+          if (actual_type != AST_VARIABLE_TYPE_I32) {
             fprintf(stderr, "%s:%d:%d [Semantic error]: No such function signiture for SYS_CALL intrinsic.\n\tThe right signiture is SYS_CALL(i32 i32)\n",
                     stmt->funccall->pos.file_path,
                     stmt->funccall->pos.row,
@@ -119,7 +156,23 @@ void semantic_check_block(Semantic* s, ast_block* block) {
         ast_funcarguments* declarg = funcdecl->arguments;
         ast_callarguments* callarg = stmt->funccall->call_arguments;
         while(declarg != NULL && callarg != NULL) {
-          if (callarg->type != declarg->arg_type) {
+          AST_VARIABLE_TYPE actual_type = callarg->type;
+          if (callarg->is_ident) {
+            ast_variablebind* variablebind = semantic_get_variablebind(s, callarg->value);
+
+            if (variablebind == NULL) {
+              fprintf(stderr, "%s:%d:%d [Semantic error]: Undefined reference to '%s'\n",
+                      stmt->funccall->pos.file_path,
+                      stmt->funccall->pos.row,
+                      stmt->funccall->pos.col,
+                      callarg->value);
+              exit(1);
+            }
+
+            actual_type = variablebind->type;
+          }
+
+          if (actual_type != declarg->arg_type) {
             fprintf(stderr, "%s:%d:%d [Semantic error]: Argument in function call '%s', on position %d should be of type '%s', not '%s'.\n",
                     stmt->funccall->pos.file_path,
                     stmt->funccall->pos.row,

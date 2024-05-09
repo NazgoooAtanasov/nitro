@@ -39,7 +39,7 @@ int main(int argc, char** argv) {
   Semantic semantic = semantic_create(axiom);
   semantic_check(&semantic);
 
-  Generator generator = generator_create(axiom);
+  Generator generator = generator_create(axiom, &semantic);
   generator_gen_top_level(&generator);
 
   fprintf(stdout, "%s\n", generator.asm_buffr);

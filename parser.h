@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 typedef enum {
+  AST_VARIABLE_TYPE_UNKNOWN,
   AST_VARIABLE_TYPE_I32,
   AST_VARIABLE_TYPE_STRING,
   AST_VARIABLE_TYPE_VOID,
@@ -32,6 +33,8 @@ typedef struct {
 typedef struct _ast_callarguments {
   const char* value;
   AST_VARIABLE_TYPE type;
+  bool is_ident;
+
   ast_position pos;
   struct _ast_callarguments* next;
   struct _ast_callarguments* prev;

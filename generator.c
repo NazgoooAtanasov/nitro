@@ -2,10 +2,11 @@
 #include <stdio.h>
 #include <string.h>
 
-Generator generator_create(ast_axiom* ast) {
+Generator generator_create(ast_axiom* ast, Semantic* semantic) {
   Generator gen = {0};
   gen.ast = ast;
   gen.cur = 0;
+  gen.semantic = semantic;
   memset(gen.asm_buffr, '\0', MAX_NITRO_FILE_SIZE);
   memset(gen.strings, '\0', 1024);
   return gen;
@@ -97,7 +98,12 @@ void generator_gen_block(Generator* g, ast_block* block) {
         
         while(arg != NULL) {
           generator_add_asm(g, "\tpush ");
-          generator_add_asm(g, arg->value);
+          if (arg->is_ident) {
+            ast_variablebind* variablebind = semantic_get_variablebind(g->semantic, arg->value);
+            generator_add_asm(g, variablebind->value);
+          } else {
+            generator_add_asm(g, arg->value);
+          }
           generator_add_asm(g, "\n");
           arg = arg->prev;
         }

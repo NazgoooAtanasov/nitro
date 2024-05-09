@@ -1,8 +1,10 @@
 include "io"
 
-func getinteger(i: i32 ii: i32) -> void do
+func exit(exitcode: i32) -> void do
+  SYS_CALL(60 exitcode)
 end
 
 func main() -> i32 do
-  getinteger(5 69)
+  bind exitcode: i32 = 69
+  exit(exitcode)
 end
